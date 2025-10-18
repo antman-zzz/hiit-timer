@@ -143,7 +143,7 @@
 
         <div class="button-group">
             <button id="startButton">スタート</button>
-            <button id="resetButton" style="display: none;">リセット</button>
+            <button id="resetButton">リセット</button>
         </div>
     </div>
 
@@ -188,7 +188,6 @@
         }
 
         function updateDisplay() {
-            console.log(`updateDisplay: currentTime=${currentTime}, isPreparing=${isPreparing}, isRunning=${isRunning}`);
             timerDisplay.textContent = currentTime;
 
             if (isPreparing) {
@@ -226,7 +225,6 @@
         }
 
         function tick() {
-            console.log(`tick: currentTime=${currentTime}, isPreparing=${isPreparing}, isRunning=${isRunning}`);
             currentTime--;
 
             // Audio notification
@@ -268,8 +266,6 @@
             currentExerciseIndex = 0;
             activeTimer = 1;
             currentTime = parseInt(time1Input.value, 10);
-            startButton.style.display = 'inline-block';
-            resetButton.style.display = 'none';
             updateDisplay();
         }
 
@@ -299,8 +295,6 @@
             time1Input.disabled = true;
             time2Input.disabled = true;
             document.querySelector('.input-group').style.display = 'none';
-            startButton.style.display = 'none';
-            resetButton.style.display = 'inline-block';
 
             updateDisplay();
             intervalId = setInterval(tick, 1000);

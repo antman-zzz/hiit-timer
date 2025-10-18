@@ -195,7 +195,7 @@
                 currentTimerLabel.textContent = `開始まで...`;
                 timerDisplay.style.color = '#ff9500'; // Orange
             } else if (isRunning) {
-                currentTimerLabel.textContent = activeTimer === 1 ? 'Work' : 'Rest';
+                currentTimerLabel.textContent = '';
                 timerDisplay.style.color = activeTimer === 1 ? '#007aff' : '#ff3b30';
                 if (activeTimer === 1) {
                     exerciseNameDisplay.textContent = exercises[currentExerciseIndex % exercises.length];

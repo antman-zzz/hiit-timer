@@ -242,6 +242,7 @@
                     isRunning = true;
                     activeTimer = 1;
                     currentTime = parseInt(time1Input.value, 10);
+                    updateDisplay();
                 }
             } else { // isRunning
                 if (currentTime < 0) {
@@ -302,6 +303,11 @@
             updateDisplay();
             intervalId = setInterval(tick, 1000);
         });
+
+        resetButton.addEventListener('click', resetTimer);
+
+        // 初期表示
+        resetTimer();
 
 </body>
 </html>

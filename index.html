@@ -188,6 +188,7 @@
         }
 
         function updateDisplay() {
+            console.log(`updateDisplay: currentTime=${currentTime}, isPreparing=${isPreparing}, isRunning=${isRunning}`);
             timerDisplay.textContent = currentTime;
 
             if (isPreparing) {
@@ -225,6 +226,7 @@
         }
 
         function tick() {
+            console.log(`tick: currentTime=${currentTime}, isPreparing=${isPreparing}, isRunning=${isRunning}`);
             currentTime--;
 
             // Audio notification

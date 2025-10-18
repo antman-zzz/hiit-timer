@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交互カウントダウンタイマー</title>
+    <style>
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            text-align: center;
+            background-color: #ffffff;
+            padding: 1.5em;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        h1 {
+            color: #1c1c1e;
+            margin-top: 0;
+            margin-bottom: 0.5em;
+            font-size: 1.5rem;
+        }
+        .timer-display {
+            font-size: clamp(5rem, 25vw, 7rem);
+            font-weight: 600;
+            color: #007aff;
+            line-height: 1;
+            margin: 0.2em 0;
+        }
+        .current-timer-label {
+            font-size: 1rem;
+            color: #6c6c70;
+            height: 1.2em;
+            margin-bottom: 0.8em;
+        }
+        .input-group {
+            display: flex;
+            justify-content: center;
+            gap: 1em;
+            margin-bottom: 1.2em;
+        }
+        .input-group div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        label {
+            margin-bottom: 0.5em;
+            font-size: 0.8em;
+            color: #6c6c70;
+        }
+        input[type="number"] {
+            width: 70px;
+            padding: 0.7em;
+            border: 1px solid #c6c6c8;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.1em;
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 1em;
+        }
+        button {
+            padding: 0.8em 1.2em;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            color: #fff;
+            min-width: 100px;
+        }
+        #startButton {
+            background-color: #007aff;
+        }
+        #startButton:hover {
+            background-color: #005ecb;
+        }
+        #stopButton {
+            background-color: #ff3b30;
+        }
+        #stopButton:hover {
+            background-color: #c92c23;
+        }
+        #resetButton {
+            background-color: #8e8e93;
+        }
+        #resetButton:hover {
+            background-color: #6c6c70;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .exercise-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.2em;
+            height: 1.5em; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>交互カウントダウンタイマー</h1>
+
+        <div id="exerciseName" class="exercise-name">エクササイズ</div>
+        <div id="timerDisplay" class="timer-display">0</div>
+        <div id="currentTimerLabel" class="current-timer-label"></div>
+
+        <div class="input-group">
+            <div>
+                <label for="time1">時間① (秒)</label>
+                <input type="number" id="time1" value="20" min="1">
+            </div>
+            <div>
+                <label for="time2">時間② (秒)</label>
+                <input type="number" id="time2" value="10" min="1">
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button id="startButton">スタート</button>
+            <button id="stopButton">ストップ</button>
+            <button id="resetButton">リセット</button>
+        </div>
+    </div>
+
+    <script>
+        const time1Input = document.getElementById('time1');
+        const time2Input = document.getElementById('time2');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const resetButton = document.getElementById('resetButton');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const currentTimerLabel = document.getElementById('currentTimerLabel');
+        const exerciseNameDisplay = document.getElementById('exerciseName');
+
+        const exercises = ["バービー", "マウンテンクライマー", "スクワットスラスト", "ジャンピングジャック"];
+        const PREP_SECONDS = 5;
+
+        let audioCtx; // for Web Audio API
+        let intervalId = null;
+        let isRunning = false;
+        let isPreparing = false;
+        let currentTime;
+        let activeTimer = 1;
+        let currentExerciseIndex = 0;
+
+        // --- Audio Functions ---
+        function playTone(frequency, duration, type = 'sine') {
+            if (!audioCtx) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+            
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + (duration / 1000));
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + (duration / 1000));
+        }
+
+        function updateDisplay() {
+            timerDisplay.textContent = currentTime;
+
+            if (isPreparing) {
+                exerciseNameDisplay.textContent = '準備';
+                currentTimerLabel.textContent = `開始まで...`;
+                timerDisplay.style.color = '#ff9500'; // Orange
+            } else if (isRunning) {
+                currentTimerLabel.textContent = activeTimer === 1 ? 'Work' : 'Rest';
+                timerDisplay.style.color = activeTimer === 1 ? '#007aff' : '#ff3b30';
+                if (activeTimer === 1) {
+                    exerciseNameDisplay.textContent = exercises[currentExerciseIndex % exercises.length];
+                } else {
+                    const nextIndex = (currentExerciseIndex + 1) % exercises.length;
+                    exerciseNameDisplay.textContent = `次は: ${exercises[nextIndex]}`;
+                }
+            } else {
+                // Stopped or Reset
+                currentTimerLabel.textContent = '待機中';
+                exerciseNameDisplay.textContent = 'エクササイズ';
+                timerDisplay.style.color = '#007aff';
+                timerDisplay.textContent = time1Input.value;
+            }
+        }
+
+        function switchTimer() {
+            if (activeTimer === 1) {
+                activeTimer = 2;
+                currentTime = parseInt(time2Input.value, 10);
+            } else {
+                activeTimer = 1;
+                currentTime = parseInt(time1Input.value, 10);
+                currentExerciseIndex++;
+            }
+            updateDisplay();
+        }
+
+        function tick() {
+            currentTime--;
+
+            // Audio notification
+            if (audioCtx) {
+                if (currentTime === 3 || currentTime === 2 || currentTime === 1) {
+                    playTone(880, 150, 'triangle'); // "ピ"
+                } else if (currentTime === 0) {
+                    playTone(523, 400, 'sine'); // "ポーン"
+                }
+            }
+
+            if (isPreparing) {
+                if (currentTime < 0) {
+                    isPreparing = false;
+                    isRunning = true;
+                    activeTimer = 1;
+                    currentTime = parseInt(time1Input.value, 10);
+                }
+            } else { // isRunning
+                if (currentTime < 0) {
+                    switchTimer();
+                    return; 
+                }
+            }
+            updateDisplay();
+        }
+
+        function stopTimer() {
+            if (!isRunning && !isPreparing) return;
+            clearInterval(intervalId);
+            intervalId = null;
+            isRunning = false;
+            isPreparing = false;
+            time1Input.disabled = false;
+            time2Input.disabled = false;
+            updateDisplay();
+        }
+
+        function resetTimer() {
+            stopTimer();
+            time1Input.value = 20;
+            time2Input.value = 10;
+            currentExerciseIndex = 0;
+            activeTimer = 1;
+            currentTime = parseInt(time1Input.value, 10);
+            updateDisplay();
+        }
+
+        startButton.addEventListener('click', () => {
+            if (isRunning || isPreparing) return;
+
+            // Initialize AudioContext on user interaction
+            if (!audioCtx) {
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.error("Web Audio API is not supported in this browser");
+                }
+            }
+
+            const t1 = parseInt(time1Input.value, 10);
+            const t2 = parseInt(time2Input.value, 10);
+
+            if (isNaN(t1) || isNaN(t2) || t1 <= 0 || t2 <= 0) {
+                alert('1以上の秒数を入力してください。');
+                return;
+            }
+
+            isPreparing = true;
+            currentTime = PREP_SECONDS;
+            
+            time1Input.disabled = true;
+            time2Input.disabled = true;
+
+            updateDisplay();
+            intervalId = setInterval(tick, 1000);
+        });
+
+        stopButton.addEventListener('click', stopTimer);
+        resetButton.addEventListener('click', resetTimer);
+
+        // 初期表示
+        resetTimer();
+
+    </script>
+
+</body>
+</html>

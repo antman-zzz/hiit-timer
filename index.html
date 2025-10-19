@@ -26,6 +26,7 @@
             padding: 1.5em;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 2px solid black;
             width: 90%;
             max-width: 400px;
             display: flex;
@@ -127,13 +128,14 @@
         <h1 style="background-color: black; color: white; padding: 0.5em 0; width: 100%; text-align: center; border-radius: 10px 10px 0 0;">HIITタイマー</h1>
 
         <div id="exerciseName" class="exercise-name">エクササイズ</div>
-        <div id="display" class="display" style="text-align: center;">
+        <div id="initialExerciseList" class="display" style="text-align: center;">
             ・バービー<br>
             ・マウンテンクライマー<br>
             ・スクワットスラスト<br>
             ・ジャンピングジャック<br>
             <div style="text-align: right;">を行います。</div>
         </div>
+        <div id="timerValueDisplay" class="timer-display"></div>
         <div id="currentTimerLabel" class="current-timer-label"></div>
 
         <div class="input-group">
@@ -158,7 +160,8 @@
         const time2Input = document.getElementById('time2');
         const startButton = document.getElementById('startButton');
         const resetButton = document.getElementById('resetButton');
-        const timerDisplay = document.getElementById('timerDisplay');
+        const timerDisplay = document.getElementById('timerValueDisplay');
+        const initialExerciseList = document.getElementById('initialExerciseList');
         const currentTimerLabel = document.getElementById('currentTimerLabel');
         const exerciseNameDisplay = document.getElementById('exerciseName');
 
@@ -173,6 +176,8 @@
         let activeTimer = 1;
         let currentExerciseIndex = 0;
         let isInitialState = true;
+        let TOTAL_WORKOUT_SECONDS = 240; // 4 minutes
+        let totalElapsedTime = 0;
 
         // --- Audio Functions ---
         function playTone(frequency, duration, type = 'sine') {
@@ -192,6 +197,17 @@
 
             oscillator.start(audioCtx.currentTime);
             oscillator.stop(audioCtx.currentTime + (duration / 1000));
+        }
+
+        function playBoxingBells() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            // Bell 1
+            playTone(440, 300, 'sine');
+            // Bell 2 (slightly higher, after a short delay)
+            setTimeout(() => playTone(550, 300, 'sine'), 350);
+            // Bell 3 (even higher, after another short delay)
+            setTimeout(() => playTone(660, 300, 'sine'), 700);
         }
 
         function updateDisplay() {
@@ -237,6 +253,21 @@
 
         function tick() {
             currentTime--;
+            totalElapsedTime++; // Increment total elapsed time
+
+            // Check if total workout time is reached
+            if (totalElapsedTime >= TOTAL_WORKOUT_SECONDS) {
+                clearInterval(intervalId);
+                intervalId = null;
+                isRunning = false;
+                isPreparing = false;
+                timerDisplay.textContent = '終了！';
+                timerDisplay.style.color = '#007aff';
+                exerciseNameDisplay.style.display = 'none';
+                currentTimerLabel.style.display = 'none';
+                playBoxingBells(); // Play ending melody
+                return;
+            }
 
             // Audio notification
             if (audioCtx) {
@@ -280,6 +311,11 @@
             currentTime = parseInt(time1Input.value, 10);
             startButton.style.display = 'inline-block';
             resetButton.style.display = 'none';
+            totalElapsedTime = 0; // Reset total elapsed time
+            exerciseNameDisplay.style.display = 'block'; // Ensure visible on reset
+            currentTimerLabel.style.display = 'block'; // Ensure visible on reset
+            initialExerciseList.style.display = 'block'; // Show initial exercise list
+            timerDisplay.style.display = 'none'; // Hide timer display
             updateDisplay();
         }
 
@@ -312,6 +348,8 @@
             document.querySelector('.input-group').style.display = 'none';
             startButton.style.display = 'none';
             resetButton.style.display = 'inline-block';
+            initialExerciseList.style.display = 'none'; // Hide initial exercise list
+            timerDisplay.style.display = 'block'; // Show timer display
 
             updateDisplay();
             intervalId = setInterval(tick, 1000);

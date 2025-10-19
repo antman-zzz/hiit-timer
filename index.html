@@ -118,7 +118,6 @@
             color: #333;
             margin-bottom: 0.2em;
             height: 1.5em; 
-            background-color: rgba(255, 255, 0, 0.7);
         }
     </style>
 </head>
@@ -225,10 +224,10 @@
                 currentTimerLabel.textContent = '';
                 timerDisplay.style.color = activeTimer === 1 ? '#007aff' : '#ff3b30';
                 if (activeTimer === 1) {
-                    exerciseNameDisplay.textContent = exercises[currentExerciseIndex % exercises.length];
+                    exerciseNameDisplay.innerHTML = `<div style="background-color: rgba(255, 255, 0, 0.7);">${exercises[currentExerciseIndex % exercises.length]}</div>`;
                 } else {
                     const nextIndex = (currentExerciseIndex + 1) % exercises.length;
-                    exerciseNameDisplay.textContent = `次は: ${exercises[nextIndex]}`;
+                    exerciseNameDisplay.innerHTML = `<div style="text-align: left;">次は</div><div style="background-color: rgba(255, 255, 0, 0.7);">${exercises[nextIndex]}</div>`;
                 }
             } else {
                 // Stopped or Reset
